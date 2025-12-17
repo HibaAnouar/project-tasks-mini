@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using backend.Services;
 using backend.Models;
@@ -52,6 +53,15 @@ public class AuthController : ControllerBase
         var token = tokenHandler.CreateToken(tokenDescriptor);
         return tokenHandler.WriteToken(token);
     }
+
+[Authorize]
+[HttpGet("me")]
+public IActionResult Me()
+{
+    var email = User.Identity?.Name;
+    return Ok(new { email });
+}
+
 }
 
 public record LoginRequest(string Email, string Password);

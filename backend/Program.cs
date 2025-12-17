@@ -9,34 +9,14 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
+
+
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite("Data Source=app.db"));
 
-builder.Services.AddControllers();
-
-var app = builder.Build();
-
-using var scope = app.Services.CreateScope();
-var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-
-if (!db.Users.Any())
-{
-    db.Users.Add(new User
-    {
-        Email = "alice@example.com",
-        PasswordHash = BCrypt.Net.BCrypt.HashPassword("Password123")
-    });
-
-    db.Users.Add(new User
-    {
-        Email = "bob@example.com",
-        PasswordHash = BCrypt.Net.BCrypt.HashPassword("Secret456")
-    });
-
-    db.SaveChanges();
-}
-
 builder.Services.AddScoped<UsersService>();
+
+builder.Services.AddControllers();
 
 var jwtSettings = builder.Configuration.GetSection("Jwt");
 var key = Encoding.ASCII.GetBytes(jwtSettings["Key"]!);
@@ -59,7 +39,39 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-app.UseAuthentication(); 
+builder.Services.AddAuthorization();
+
+
+
+var app = builder.Build();
+
+
+
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+    if (!db.Users.Any())
+    {
+        db.Users.Add(new User
+        {
+            Email = "alice@example.com",
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword("Password123")
+        });
+
+        db.Users.Add(new User
+        {
+            Email = "bob@example.com",
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword("Secret456")
+        });
+
+        db.SaveChanges();
+    }
+}
+
+
+
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
