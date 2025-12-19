@@ -45,7 +45,7 @@ public class TasksController : ControllerBase
 
     // POST: api/projects/{projectId}/tasks
     [HttpPost]
-    public async Task<IActionResult> CreateTask(int projectId, [FromBody] string title)
+    public async Task<IActionResult> CreateTask(int projectId, [FromBody] CreateTaskRequest request)
     {
         var userEmail = User.Identity!.Name!;
 
@@ -58,7 +58,7 @@ public class TasksController : ControllerBase
 
         var task = new Models.TaskItem
         {
-            Title = title,
+            Title = request.Title, 
             ProjectId = projectId
         };
 

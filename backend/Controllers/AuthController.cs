@@ -5,6 +5,8 @@ using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using backend.DTOs;
+
 
 namespace backend.Controllers;
 
@@ -19,6 +21,18 @@ public class AuthController : ControllerBase
     {
         _usersService = usersService;
         _config = config;
+    }
+
+    [HttpPost("register")]
+    public IActionResult Register([FromBody] RegisterRequest request)
+    {
+        if (_usersService.GetByEmail(request.Email) != null)
+            return BadRequest(new { message = "Email already exists." });
+
+        var user = _usersService.CreateUser(request.Email, request.Password);
+        var token = GenerateJwtToken(user);
+
+        return Ok(new { token });
     }
 
     [HttpPost("login")]

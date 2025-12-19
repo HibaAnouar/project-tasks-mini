@@ -13,13 +13,24 @@ public class UsersService
         _db = db;
     }
 
-    public User? GetByEmail(string email)
-    {
-        return _db.Users.FirstOrDefault(u => u.Email == email);
-    }
+    public User? GetByEmail(string email) =>
+        _db.Users.FirstOrDefault(u => u.Email == email);
 
-    public bool VerifyPassword(string password, string hash)
+    public bool VerifyPassword(string password, string passwordHash) =>
+        BCrypt.Net.BCrypt.Verify(password, passwordHash);
+
+    public User CreateUser(string email, string password)
     {
-        return BCrypt.Net.BCrypt.Verify(password, hash);
+        var hashed = BCrypt.Net.BCrypt.HashPassword(password);
+
+        var user = new User
+        {
+            Email = email,
+            PasswordHash = hashed
+        };
+
+        _db.Users.Add(user);
+        _db.SaveChanges();
+        return user;
     }
 }
