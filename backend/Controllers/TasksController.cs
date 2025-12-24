@@ -5,7 +5,6 @@ using backend.Models;
 using Microsoft.EntityFrameworkCore;
 using backend.DTOs;
 
-
 namespace backend.Controllers;
 
 [ApiController]
@@ -26,39 +25,45 @@ public class TasksController : ControllerBase
     {
         var userEmail = User.Identity!.Name!;
 
-        var project = await _db.Projects
-            .Include(p => p.Tasks)
-            .Include(p => p.User)
-            .FirstOrDefaultAsync(p => p.Id == projectId && p.User.Email == userEmail);
-
-        if (project == null)
-            return NotFound();
-
-        var tasks = project.Tasks.Select(t => new TaskDto(
-            t.Id,
-            t.Title,
-            t.IsCompleted
-        ));
+        var tasks = await _db.Tasks
+            .Where(t =>
+                t.ProjectId == projectId &&
+                t.Project.User.Email == userEmail)
+            .Select(t => new TaskDto(
+                t.Id,
+                t.Title,
+                t.IsCompleted,
+                t.Description,
+                t.DueDate
+            ))
+            .ToListAsync();
 
         return Ok(tasks);
     }
 
     // POST: api/projects/{projectId}/tasks
     [HttpPost]
-    public async Task<IActionResult> CreateTask(int projectId, [FromBody] CreateTaskRequest request)
+    public async Task<IActionResult> CreateTask(
+        int projectId,
+        [FromBody] CreateTaskRequest request)
     {
+        if (request == null || string.IsNullOrWhiteSpace(request.Title))
+            return BadRequest(new { message = "Task title is required" });
+
         var userEmail = User.Identity!.Name!;
 
-        var project = await _db.Projects
-            .Include(p => p.User)
-            .FirstOrDefaultAsync(p => p.Id == projectId && p.User.Email == userEmail);
+        var projectExists = await _db.Projects.AnyAsync(p =>
+            p.Id == projectId &&
+            p.User.Email == userEmail);
 
-        if (project == null)
+        if (!projectExists)
             return NotFound();
 
-        var task = new Models.TaskItem
+        var task = new TaskItem
         {
-            Title = request.Title, 
+            Title = request.Title,
+            Description = request.Description,  
+            DueDate = request.DueDate,          
             ProjectId = projectId
         };
 
@@ -68,15 +73,23 @@ public class TasksController : ControllerBase
         var dto = new TaskDto(
             task.Id,
             task.Title,
-            task.IsCompleted
+            task.IsCompleted,
+            task.Description,
+            task.DueDate
         );
 
-        return Ok(dto);
+        return CreatedAtAction(
+            nameof(GetTasks),
+            new { projectId },
+            dto
+        );
     }
 
     // PUT: api/projects/{projectId}/tasks/{taskId}/complete
     [HttpPut("{taskId}/complete")]
-    public async Task<IActionResult> MarkTaskCompleted(int projectId, int taskId)
+    public async Task<IActionResult> MarkTaskCompleted(
+        int projectId,
+        int taskId)
     {
         var userEmail = User.Identity!.Name!;
 
@@ -99,7 +112,9 @@ public class TasksController : ControllerBase
 
     // DELETE: api/projects/{projectId}/tasks/{taskId}
     [HttpDelete("{taskId}")]
-    public async Task<IActionResult> DeleteTask(int projectId, int taskId)
+    public async Task<IActionResult> DeleteTask(
+        int projectId,
+        int taskId)
     {
         var userEmail = User.Identity!.Name!;
 

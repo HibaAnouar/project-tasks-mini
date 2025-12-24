@@ -5,7 +5,6 @@ using backend.Models;
 using Microsoft.EntityFrameworkCore;
 using backend.DTOs;
 
-
 namespace backend.Controllers;
 
 [ApiController]
@@ -30,17 +29,13 @@ public class ProjectsController : ControllerBase
                 .ThenInclude(p => p.Tasks)
             .FirstOrDefaultAsync(u => u.Email == userEmail);
 
-        if (user == null)
-            return Unauthorized();
+        if (user == null) return Unauthorized();
 
         var result = user.Projects.Select(p => new ProjectDto(
             p.Id,
             p.Title,
-            p.Tasks.Select(t => new TaskDto(
-                t.Id,
-                t.Title,
-                t.IsCompleted
-            )).ToList()
+            p.Description, 
+            p.Tasks.Select(t => new TaskDto(t.Id, t.Title, t.IsCompleted)).ToList()
         ));
 
         return Ok(result);
@@ -48,18 +43,16 @@ public class ProjectsController : ControllerBase
 
     // POST: api/projects
     [HttpPost]
-    public async Task<IActionResult> CreateProject(
-        [FromBody] CreateProjectRequest request)
+    public async Task<IActionResult> CreateProject([FromBody] CreateProjectRequest request)
     {
         var userEmail = User.Identity!.Name!;
         var user = await _db.Users.FirstOrDefaultAsync(u => u.Email == userEmail);
-
-        if (user == null)
-            return Unauthorized();
+        if (user == null) return Unauthorized();
 
         var project = new Project
         {
             Title = request.Title,
+            Description = request.Description, 
             UserId = user.Id
         };
 
@@ -69,6 +62,7 @@ public class ProjectsController : ControllerBase
         return Ok(new ProjectDto(
             project.Id,
             project.Title,
+            project.Description, 
             new List<TaskDto>()
         ));
     }
@@ -78,23 +72,18 @@ public class ProjectsController : ControllerBase
     public async Task<IActionResult> GetProjectById(int id)
     {
         var userEmail = User.Identity!.Name!;
-
         var project = await _db.Projects
             .Include(p => p.Tasks)
             .Include(p => p.User)
             .FirstOrDefaultAsync(p => p.Id == id && p.User.Email == userEmail);
 
-        if (project == null)
-            return NotFound();
+        if (project == null) return NotFound();
 
         var dto = new ProjectDto(
             project.Id,
             project.Title,
-            project.Tasks.Select(t => new TaskDto(
-                t.Id,
-                t.Title,
-                t.IsCompleted
-            )).ToList()
+            project.Description,
+            project.Tasks.Select(t => new TaskDto(t.Id, t.Title, t.IsCompleted)).ToList()
         );
 
         return Ok(dto);
@@ -105,14 +94,12 @@ public class ProjectsController : ControllerBase
     public async Task<IActionResult> GetProjectProgress(int id)
     {
         var userEmail = User.Identity!.Name!;
-
         var project = await _db.Projects
             .Include(p => p.Tasks)
             .Include(p => p.User)
             .FirstOrDefaultAsync(p => p.Id == id && p.User.Email == userEmail);
 
-        if (project == null)
-            return NotFound();
+        if (project == null) return NotFound();
 
         var total = project.Tasks.Count;
         var completed = project.Tasks.Count(t => t.IsCompleted);
@@ -124,5 +111,22 @@ public class ProjectsController : ControllerBase
             completedTasks = completed,
             progressPercentage = progress
         });
+    }
+
+    // DELETE: api/projects/{id}
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteProject(int id)
+    {
+        var userEmail = User.Identity!.Name!;
+        var project = await _db.Projects
+            .Include(p => p.User)
+            .FirstOrDefaultAsync(p => p.Id == id && p.User.Email == userEmail);
+
+        if (project == null) return NotFound();
+
+        _db.Projects.Remove(project);
+        await _db.SaveChangesAsync();
+
+        return NoContent();
     }
 }

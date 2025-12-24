@@ -6,7 +6,7 @@ import { useAuth } from "./context/AuthContext";
 
 function PrivateRoute({ children }) {
   const { token } = useAuth();
-  return token ? children : <Navigate to="/login" />;
+  return token ? children : <Navigate to="/login" replace />;
 }
 
 export default function App() {
@@ -32,7 +32,7 @@ export default function App() {
         }
       />
 
-      <Route path="*" element={<Navigate to="/projects" />} />
+      <Route path="*" element={<Navigate to="/projects" replace />} />
     </Routes>
   );
 }

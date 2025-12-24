@@ -4,5 +4,6 @@ namespace backend.DTOs;
 
 public record CreateProjectRequest(
     [Required]
-    string Title
+    string Title,
+    string? Description
 );
