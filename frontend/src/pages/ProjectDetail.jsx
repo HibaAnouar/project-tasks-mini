@@ -7,9 +7,10 @@ import Header from "../components/Header";
 export default function ProjectDetail() {
   const { id } = useParams();
 
-  const [project, setProject] = useState(null); 
-  const [title, setTitle] = useState(""); 
-  const [description, setDescription] = useState(""); 
+  const [project, setProject] = useState(null);
+  const [tasks, setTasks] = useState([]); // ✅ FIXED
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
@@ -118,7 +119,9 @@ export default function ProjectDetail() {
                 width: `${progress.progressPercentage}%`,
                 height: "100%",
                 background:
-                  progress.progressPercentage === 100 ? "#4caf50" : "#2196f3",
+                  progress.progressPercentage === 100
+                    ? "#4caf50"
+                    : "#2196f3",
                 transition: "width 0.3s ease",
               }}
             />
