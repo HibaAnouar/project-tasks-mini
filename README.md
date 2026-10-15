@@ -109,6 +109,3 @@ Delete tasks if needed
 
 Progress bar shows the percentage of completed tasks
 
-## DEMO
-
-You can watch a simple demo here: https://drive.google.com/file/d/1OJpnbdPT_R5BSbn6hFgf6-U1rjnAAtGm/view?usp=sharing
